@@ -6,7 +6,7 @@
 	       #:use-module (guix gexp)
 	       #:use-module (ice-9 match)
 	       #:use-module (packages tailscale)
-	       #:export (tailscale-service tailscale-service-type tailscale-configuration))
+	       #:export (tailscale-service-type tailscale-configuration))
 
 (define-record-type* <tailscale-configuration>
 		     tailscale-configuration make-tailscale-configuration
@@ -28,13 +28,26 @@
 		     (display str)
 		     (status:exit-val (close-pipe port)))))))
 
+(define tailscale-shepherd-service
+  (match-lambda
+    (($ <tailscale-configuration> tailscale)
+     (list (shepherd-service
+	     (provision '(tailscale))
+	     (requirement '(tailscaled))
+             (actions (list %tailscale-up-action))
+	     (start #~(make-forkexec-constructor
+			(list
+			  #$(file-append tailscale "/bin/tailscale")
+			  "up")))
+	     (stop #~(make-kill-destructor)))))))
+
+
 (define tailscaled-shepherd-service
   (match-lambda
     (($ <tailscale-configuration> tailscale state-file)
        (list (shepherd-service
-         (provision '(tailscale))
+         (provision '(tailscaled))
 	 (requirement '()) ;; services this depends on
-	 (actions (list %tailscale-up-action))
          (start #~(make-forkexec-constructor
 	 	   (list
 	 	     #$(file-append tailscale "/bin/tailscaled")
@@ -46,12 +59,6 @@
     (name 'tailscale)
     (default-value (tailscale-configuration))
     (extensions
-      (list (service-extension shepherd-root-service-type
-			   tailscaled-shepherd-service)))
+      (list (service-extension shepherd-root-service-type tailscaled-shepherd-service)
+	    (service-extension shepherd-root-service-type tailscale-shepherd-service)))
     (description "Launch tailscale.")))
-
-(define* (tailscale-service #:key (tailscale tailscale))
-	 "tailscale service"
-	 (service tailscale-service-type
-		  (tailscale-configuration
-		    (tailscale tailscale))))

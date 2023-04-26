@@ -14,7 +14,7 @@
 		     (tailscale tailscale-configuration-tailscale
 				(default tailscale))
 		     (state-file tailscale-configuration-state-file
-				 (default "foo.state")))
+				 (default "tailscaled.state")))
 
 (define %tailscale-up-action
   (shepherd-action
@@ -28,10 +28,14 @@
 		     (display str)
 		     (status:exit-val (close-pipe port)))))))
 
-(define tailscale-shepherd-service
-  (match-lambda
-    (($ <tailscale-configuration> tailscale)
-     (list (shepherd-service
+(define (tailscale-shepherd-service config)
+  "Return a <shepherd-service> for Tailscale with CONFIG"
+  (let ((tailscale
+	   (tailscale-configuration-tailscale config))
+	 (state-file
+	   (tailscale-configuration-state-file config)))
+     (list
+       (shepherd-service
 	     (provision '(tailscale))
 	     (requirement '(tailscaled))
              (actions (list %tailscale-up-action))
@@ -39,26 +43,32 @@
 			(list
 			  #$(file-append tailscale "/bin/tailscale")
 			  "up")))
-	     (stop #~(make-kill-destructor)))))))
+	     (stop #~(make-kill-destructor))))))
 
 
-(define tailscaled-shepherd-service
-  (match-lambda
-    (($ <tailscale-configuration> tailscale state-file)
-       (list (shepherd-service
+(define (tailscaled-shepherd-service config)
+  "Return a <shepherd-service> for Tailscaled with CONFIG"
+  (let ((tailscale
+	   (tailscale-configuration-tailscale config))
+	 (state-file
+	   (tailscale-configuration-state-file config)))
+      (list
+	(shepherd-service
          (provision '(tailscaled))
-	 (requirement '()) ;; services this depends on
+	 (requirement '(networking)) ;; services this depends on
          (start #~(make-forkexec-constructor
 	 	   (list
 	 	     #$(file-append tailscale "/bin/tailscaled")
  		     "--state" #$state-file)))
-         (stop #~(make-kill-destructor)))))))
+         (stop #~(make-kill-destructor))))))
 
 (define tailscale-service-type
   (service-type
     (name 'tailscale)
-    (default-value (tailscale-configuration))
     (extensions
-      (list (service-extension shepherd-root-service-type tailscaled-shepherd-service)
-	    (service-extension shepherd-root-service-type tailscale-shepherd-service)))
+      (list (service-extension shepherd-root-service-type
+			       tailscaled-shepherd-service)))
+	    ;(service-extension shepherd-root-service-type
+	;		       tailscale-shepherd-service)))
+    (default-value (tailscale-configuration))
     (description "Launch tailscale.")))

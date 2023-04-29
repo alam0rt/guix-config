@@ -21,12 +21,12 @@
     (arguments
       (list
         #:install-plan
-        #~`((,(string-append "tailscale_" #$version "_amd64/") "bin/"))))
-    (propagated-inputs (list iptables))
-    (native-inputs '())
+        #~`((,(string-append "tailscale_" #$version "_amd64/") "/usr/bin/"))))
+    (propagated-inputs
+      ; iptables is required for setting up routing
+      (list iptables))
     (synopsis "Tailscale connects your team's devices and development environments for easy access to remote resources.")
     (description
      "Tailscale is a zero config VPN for building secure networks. Install on any device in minutes. Remote access from any network or physical location.")
     (home-page "https://tailscale.com/")
-    (license #f))
-)
+    (license #f)))

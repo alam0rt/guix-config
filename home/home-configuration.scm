@@ -18,7 +18,7 @@
 
 (define %logdir
   (or (getenv "XDG_LOG_HOME")
-      (format #f "~a/.local/var/log")))
+      (format #f "~/.local/var/log")))
 
 (define %syncthing-user-service
   (shepherd-service
@@ -56,6 +56,7 @@
 					    "emacs-slime"
 					    "emacs-spacemacs-theme"
 					    "emacs-slime-company"
+					    "font-inconsolata"
 					    "guile"
 					    "gdb"
                                             "emacs"

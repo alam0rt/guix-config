@@ -12,7 +12,23 @@
 	     (ice-9 receive)
 	     (ice-9 rdelim)
 	     (gnu home services)
+	     (gnu home services shepherd)
+	     (gnu packages syncthing)
              (gnu home services shells))
+
+(define %logdir
+  (or (getenv "XDG_LOG_HOME")
+      (format #f "~a/.local/var/log")))
+
+(define %syncthing-user-service
+  (shepherd-service
+    (documentation "Run `syncthing' without calling the browser")
+    (provision '(syncthing))
+    (start #~(make-forkexec-constructor
+               (list #$(file-append syncthing "/bin/syncthing") "-no-browser")
+               #:log-file (string-append #$%logdir "/syncthing.log")))
+    (stop #~(make-kill-destructor))
+    (respawn? #t)))
 
 (home-environment
   ;; Below is the list of packages that will show up in your
@@ -55,10 +71,13 @@
   ;; services, run 'guix home search KEYWORD' in a terminal.
   (services
    (list 
-    (simple-service 'emacs-configuration
+     (service home-shepherd-service-type
+	      (home-shepherd-configuration
+		(services (list %syncthing-user-service))))
+     (simple-service 'emacs-configuration
 		    home-xdg-configuration-files-service-type
 		      `(("emacs", (local-file "./files/emacs" #:recursive? #t))))
-    (simple-service 'configz
+     (simple-service 'configz
 		    home-xdg-configuration-files-service-type
 		    `(("tmux/tmux.conf" ,(local-file "./files/tmux.conf"))))
      (service home-bash-service-type
@@ -72,8 +91,9 @@
 					    ("JAVA_HOME" . "`guix build openjdk@17 | awk '/-jdk$/'`")
                                             ("EDITOR" . "nvim")))
                    (bashrc (list (local-file
-                                  "/home/sam/.config/guix/home/.bashrc"
+                                  "/home/sam/guix/home/.bashrc"
                                   "bashrc")))
                    (bash-profile (list (local-file
-                                        "/home/sam/.config/guix/home/.bash_profile"
+                                        "/home/sam/guix/home/.bash_profile"
                                         "bash_profile"))))))))
+

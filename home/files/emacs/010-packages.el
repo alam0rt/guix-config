@@ -15,4 +15,4 @@
 (add-hook 'go-mode-hook 'lsp-deferred)
 (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
 (add-hook 'after-init-hook 
-  (lambda () (load-theme 'spacemacs t)))
+  (lambda () (load-theme 'spacemacs-dark t)))

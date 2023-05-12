@@ -24,6 +24,7 @@
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 (savehist-mode 1)
+(setq savehist-file "~/.emacs_history")
 
 ;; Tramp
 (require 'tramp)

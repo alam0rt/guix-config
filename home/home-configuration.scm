@@ -80,7 +80,8 @@
 		      `(("emacs", (local-file "./files/emacs" #:recursive? #t))))
      (simple-service 'configz
 		    home-xdg-configuration-files-service-type
-		    `(("tmux/tmux.conf" ,(local-file "./files/tmux.conf"))))
+		    `(("tmux/tmux.conf" ,(local-file "./files/tmux.conf"))
+		      ("git/config" ,(local-file "./files/gitconfig"))))
      (service home-bash-service-type
                   (home-bash-configuration
                    (aliases '(("grep" . "grep --color=auto") ("ll" . "ls -l")

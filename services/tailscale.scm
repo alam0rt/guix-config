@@ -7,65 +7,38 @@
 	       #:use-module (ice-9 match)
 	       #:use-module (packages tailscale)
 	       #:use-module (gnu packages linux)
-	       #:export (tailscale-service-type tailscale-configuration))
+	       #:export (tailscaled-service-type tailscaled-configuration))
 
-(define-record-type* <tailscale-configuration>
-		     tailscale-configuration make-tailscale-configuration
-		     tailscale-configuration?
-		     (tailscale tailscale-configuration-tailscale
+;; TODO: https://tailscale.com/kb/1188/linux-dns/#dhcp-dhclient-overwriting-etcresolvconf
+
+(define-record-type* <tailscaled-configuration>
+		     tailscaled-configuration make-tailscaled-configuration
+		     tailscaled-configuration?
+		     (tailscale tailscaled-configuration-tailscale
 				(default tailscale))
-		     (state-file tailscale-configuration-state-file
+		     (listen-port tailscaled-configuration-listen-port
+			   (default "41641"))
+		     (state-file tailscaled-configuration-state-file
 				 (default "tailscaled.state")))
-
-(define %tailscale-up-action
-  (shepherd-action
-    (name 'up)
-    (documentation "Connect your machine to the tailscale network.")
-    (procedure #~(lambda (running)
-		   (let* ((tailscale-cli (string-append #$tailscale "/usr/bin/tailscale"))
-			  (cmd (string-join (list tailscale-cli "up")))
-			  (port (open-input-pipe cmd))
-			  (str (get-string-all port)))
-		     (display str)
-		     (status:exit-val (close-pipe port)))))))
-
-(define (tailscale-shepherd-service config)
-  "Return a <shepherd-service> for Tailscale with CONFIG"
-  (let ((tailscale
-	   (tailscale-configuration-tailscale config))
-
-	 (state-file
-	   (tailscale-configuration-state-file config)))
-     (list
-       (shepherd-service
-	     (provision '(tailscale))
-	     (requirement '(tailscaled))
-             (actions (list %tailscale-up-action))
-	     (start #~(make-forkexec-constructor
-			(list
-			  #$(file-append tailscale "/usr/bin/tailscale") "up")))
-	     (stop #~(make-kill-destructor))))))
-
 
 (define (tailscaled-activation config)
   "Run tailscaled --cleanup"
   #~(begin
       (system* #$(file-append tailscale "/usr/bin/tailscaled") "--cleanup")))
 
-
-
 (define (tailscaled-shepherd-service config)
   "Return a <shepherd-service> for Tailscaled with CONFIG"
   (let ((tailscale
-	   (tailscale-configuration-tailscale config))
-	 (state-file
-	   (tailscale-configuration-state-file config))
+	   (tailscaled-configuration-tailscale config))
+	(listen-port
+	   (tailscaled-configuration-listen-port config))
+	(state-file
+	   (tailscaled-configuration-state-file config))
 	(environment #~(list (string-append
-			       "PATH="
+			       "PATH=" ; iptables is required for tailscale to work
 			       (string-append #$iptables "/sbin")
 			       ":"
 			       (string-append #$iptables "/bin")))))
-
       (list
 	(shepherd-service
          (provision '(tailscaled))
@@ -73,18 +46,19 @@
          (start #~(make-forkexec-constructor
 		    (list #$(file-append tailscale "/usr/bin/tailscaled")
  		     "-state" #$state-file
+		     ;"-port" #$listen-port
 		     "-verbose" "10")
 		    #:environment-variables #$environment
 		    #:log-file "/var/log/tailscaled.log"))
          (stop #~(make-kill-destructor))))))
 
-(define tailscale-service-type
+(define tailscaled-service-type
   (service-type
-    (name 'tailscale)
+    (name 'tailscaled)
     (extensions
       (list (service-extension shepherd-root-service-type
 			       tailscaled-shepherd-service)
             (service-extension activation-service-type
 			       tailscaled-activation)))
-    (default-value (tailscale-configuration))
-    (description "Launch tailscale.")))
+    (default-value (tailscaled-configuration))
+    (description "Launch tailscaled.")))

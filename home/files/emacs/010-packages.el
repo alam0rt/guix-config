@@ -11,8 +11,10 @@
 (setq inferior-lisp-program "guile")
 
 ;; HOOKZ
+(add-hook 'scheme-mode-hook
+	  (lambda () geiser))
 (add-hook 'js-mode-hook #'smartparens-mode)
 (add-hook 'go-mode-hook 'lsp-deferred)
 (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
 (add-hook 'after-init-hook 
-  (lambda () (load-theme 'spacemacs t)))
+          (lambda () (load-theme 'spacemacs-light t)))

@@ -92,10 +92,8 @@
 		   (environment-variables '(("KUBECONFIG" . "/home/sam/.config/kube")
 					    ("JAVA_HOME" . "`guix build openjdk@17 | awk '/-jdk$/'`")
                                             ("EDITOR" . "nvim")))
-                   (bashrc (list (local-file
-                                  "/home/sam/guix/home/.bashrc"
-                                  "bashrc")))
-                   (bash-profile (list (local-file
-                                        "/home/sam/guix/home/.bash_profile"
-                                        "bash_profile"))))))))
+                   (bashrc
+		    (list (local-file "./files/bashrc" "bashrc")))
+                   (bash-profile
+		    (list (local-file "./files/bash_profile" "bash_profile"))))))))
 

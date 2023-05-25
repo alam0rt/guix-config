@@ -88,6 +88,7 @@
 			      ("vim" . "nvim")
 			      ("gst" . "git status")
 			      ("glog" . "git log")
+			      ("gco" . "git checkout")
                               ("ls" . "ls -p --color=auto")))
 		   (environment-variables '(("KUBECONFIG" . "/home/sam/.config/kube")
 					    ("JAVA_HOME" . "`guix build openjdk@17 | awk '/-jdk$/'`")

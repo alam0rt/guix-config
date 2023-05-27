@@ -38,7 +38,7 @@
   ;; under their own account: use 'guix search KEYWORD' to search
   ;; for packages and 'guix install PACKAGE' to install a package.
   (packages (append (specifications->packages (list "tailscale"
-						    "xscreensaver"
+						    "bluez"
 						    "nss-certs"))
                     %base-packages))
 
@@ -49,6 +49,10 @@
                  ;; To configure OpenSSH, pass an 'openssh-configuration'
                  ;; record as a second argument to 'service' below.
 		 (bluetooth-service #:auto-enable? #t)
+		 (simple-service 'etc-subuid etc-service-type
+				 (list `("subuid" ,(plain-file "subuid" "sam:100000:65536\n"))))
+		 (simple-service 'etc-subgid etc-service-type
+				 (list `("subgid" ,(plain-file "subgid" "sam:100000:65536\n"))))
 		 ;; Support communicating with YubiKey as a SmartCard device.
 		 (service pcscd-service-type)
                  (service openssh-service-type)
@@ -58,6 +62,21 @@
            ;; This is the default list of services we
            ;; are appending to.
            (modify-services %desktop-services
+             (guix-service-type config => (guix-configuration
+               (inherit config)
+               (substitute-urls
+                (append (list "https://substitutes.nonguix.org")
+                  %default-substitute-urls))
+               (authorized-keys
+                (append (list (plain-file "non-guix.pub"
+					  "(public-key 
+ (ecc 
+  (curve Ed25519)
+  (q #C1FD53E5D4CE971933EC50C9F307AE2171A2D3B52C804642A7A35F84F3A4EA98#)
+  )
+ )
+"))
+                  %default-authorized-guix-keys))))
              (elogind-service-type
                config =>
                  (elogind-configuration

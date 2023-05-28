@@ -5,16 +5,103 @@
 ;; this file to tweak the system configuration, and pass it
 ;; to the 'guix system reconfigure' command to effect your
 ;; changes.
-
-
 ;; Indicate which modules to import to access the variables
 ;; used in this configuration.
+
+
+;; import unexported variables so we can build out the new elogind service
+(define elogind-dbus-service (@@ (gnu services desktop) elogind-dbus-service))
+(define elogind-package (@@ (gnu services desktop) elogind-package))
+(define elogind-shepherd-service (@@ (gnu services desktop) elogind-shepherd-service))
+(define pam-extension-procedure (@@ (gnu services desktop) pam-extension-procedure))
+
+;; required for defining the new elogind service
+(use-modules (gnu services desktop)
+	     (gnu services dbus)
+	     (gnu services base)
+	     (gnu system pam)
+	     (gnu services shepherd)
+	     (gnu system file-systems))
+
+(define %elogind-file-systems-v2
+  ;; Uses the cgroup2 mount instead of cgroup1
+   (list (file-system
+           (device "none")
+           (mount-point "/run/systemd")
+           (type "tmpfs")
+           (check? #f)
+           (flags '(no-suid no-dev no-exec))
+           (options "mode=0755")
+           (create-mount-point? #t))
+         (file-system
+           (device "none")
+           (mount-point "/run/user")
+           (type "tmpfs")
+           (check? #f)
+           (flags '(no-suid no-dev no-exec))
+           (options "mode=0755")
+           (create-mount-point? #t))
+	 (file-system
+           (device "none")
+	   (mount-point "/sys/fs/cgroup")
+	   (type "cgroup2")
+	   (check? #f)
+	   (create-mount-point? #f))
+         (file-system
+           (device "cgroup")
+           (mount-point "/sys/fs/cgroup/elogind")
+           (type "cgroup")
+           (check? #f)
+           (options "none,name=elogind")
+           (create-mount-point? #t))))
+
+(define elogind-service-v2-type
+  ;; elogind with cgroup2 mounts
+    (service-type (name 'elogind)
+                (extensions
+                 (list (service-extension dbus-root-service-type
+                                          elogind-dbus-service)
+                       (service-extension udev-service-type
+                                          (compose list elogind-package))
+                       (service-extension polkit-service-type
+                                          (compose list elogind-package))
+
+                       ;; Start elogind from the Shepherd rather than waiting
+                       ;; for bus activation.  This ensures that it can handle
+                       ;; events like lid close, etc.
+                       (service-extension shepherd-root-service-type
+                                          elogind-shepherd-service)
+
+                       ;; Provide the 'loginctl' command.
+                       (service-extension profile-service-type
+                                          (compose list elogind-package))
+
+                       ;; Extend PAM with pam_elogind.so.
+                       (service-extension pam-root-service-type
+                                          pam-extension-procedure)
+
+                       ;; We need /run/user, /run/systemd, etc.
+                       (service-extension file-system-service-type
+                                          (const %elogind-file-systems-v2))))
+                (default-value (elogind-configuration))
+                (description "Run the @command{elogind} login and seat
+management service.  The @command{elogind} service integrates with PAM to
+allow other system components to know the set of logged-in users as well as
+their session types (graphical, console, remote, etc.).  It can also clean up
+after users when they log out.")))
+
+
 (use-modules (gnu)
 	     (gnu services shepherd)
+	     (gnu services dbus)
 	     (gnu services security-token)
 	     (services tailscale)
 	     (packages tailscale)
+	     (gnu system file-systems)
+	     (srfi srfi-1)
 	     (nongnu packages linux))
+
+
 (use-service-modules cups desktop networking ssh xorg)
 
 (operating-system
@@ -23,6 +110,7 @@
   (keyboard-layout (keyboard-layout "us"))
   (host-name "sanic")
   (kernel linux)
+  (kernel-arguments (cons "systemd.unified_cgroup_hierarchy=1" %default-kernel-arguments)) ; enable cgroups v2
   (firmware (list linux-firmware))
 
   ;; The list of user accounts ('root' is implicit).
@@ -46,13 +134,14 @@
   ;; services, run 'guix system search KEYWORD' in a terminal.
   (services
    (append (list (service xfce-desktop-service-type)
+		 (service elogind-service-v2-type)
                  ;; To configure OpenSSH, pass an 'openssh-configuration'
                  ;; record as a second argument to 'service' below.
 		 (bluetooth-service #:auto-enable? #t)
 		 (simple-service 'etc-subuid etc-service-type
-				 (list `("subuid" ,(plain-file "subuid" "sam:100000:65536\n"))))
+				 (list `("subuid" ,(plain-file "subuid" "root:0:65536\nsam:100000:65536\n"))))
 		 (simple-service 'etc-subgid etc-service-type
-				 (list `("subgid" ,(plain-file "subgid" "sam:100000:65536\n"))))
+				 (list `("subgid" ,(plain-file "subgid" "root:0:65536\nsam:100000:65536\n"))))
 		 ;; Support communicating with YubiKey as a SmartCard device.
 		 (service pcscd-service-type)
                  (service openssh-service-type)
@@ -62,6 +151,7 @@
            ;; This is the default list of services we
            ;; are appending to.
            (modify-services %desktop-services
+	     (delete elogind-service-type)
              (guix-service-type config => (guix-configuration
                (inherit config)
                (substitute-urls
@@ -77,7 +167,7 @@
  )
 "))
                   %default-authorized-guix-keys))))
-             (elogind-service-type
+             (elogind-service-v2-type
                config =>
                  (elogind-configuration
 		   (inherit config)
@@ -105,4 +195,4 @@
                          (mount-point "/")
                          (device "/dev/mapper/cryptroot")
                          (type "ext4")
-                         (dependencies mapped-devices)) %base-file-systems)))
+                         (dependencies mapped-devices))  %base-file-systems)))

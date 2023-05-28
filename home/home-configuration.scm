@@ -81,6 +81,8 @@
      (simple-service 'configz
 		    home-xdg-configuration-files-service-type
 		    `(("tmux/tmux.conf" ,(local-file "./files/tmux.conf"))
+		      ("containers/registries.conf" ,(local-file "./files/containers/registries.conf"))
+		      ("containers/policy.json" ,(local-file "./files/containers/policy.json"))
 		      ("git/config" ,(local-file "./files/gitconfig"))))
      (service home-bash-service-type
                   (home-bash-configuration
@@ -88,6 +90,7 @@
 			      ("vim" . "nvim")
 			      ("gst" . "git status")
 			      ("glog" . "git log")
+			      ("gco" . "git checkout")
                               ("ls" . "ls -p --color=auto")))
 		   (environment-variables '(("KUBECONFIG" . "/home/sam/.config/kube")
 					    ("JAVA_HOME" . "`guix build openjdk@17 | awk '/-jdk$/'`")

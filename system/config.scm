@@ -5,25 +5,31 @@
 ;; this file to tweak the system configuration, and pass it
 ;; to the 'guix system reconfigure' command to effect your
 ;; changes.
+
+
 ;; Indicate which modules to import to access the variables
 ;; used in this configuration.
-(set! (@ (gnu system file-systems) %control-groups) '())
-(set! (@ (gnu system file-systems) %elogind-file-systems) '())
-(define elogind-dbus-service (@@ (gnu services desktop) elogind-dbus-service))
-(define elogind-package (@@ (gnu services desktop) elogind-package))
-(define elogind-shepherd-service (@@ (gnu services desktop) elogind-shepherd-service))
-(define pam-extension-procedure (@@ (gnu services desktop) pam-extension-procedure))
-
-(use-modules (gnu services desktop)
-	     (gnu services dbus)
-	     (gnu services base)
-	     (gnu system pam)
+(use-modules (gnu)
 	     (gnu services shepherd)
-	     (gnu system file-systems))
+	     (gnu services security-token)
+	     (services tailscale)
+	     (packages tailscale)
+	     (nongnu packages linux))
+(use-service-modules cups desktop networking ssh xorg)
 
-(define %elogind-file-systems-v2
+(define %control-groups
+  ; use cgroups v2
+  (list (file-system
+	  (device "none")
+	  (mount-point "/sys/fs/cgroup")
+	  (type "cgroup2")
+	  (check? #f)
+	  (create-mount-point? #t))))
+
+(define %elogind-file-systems
   ;; We don't use systemd, but these file systems are needed for elogind,
   ;; which was extracted from systemd.
+  (append
    (list (file-system
            (device "none")
            (mount-point "/run/systemd")
@@ -40,12 +46,6 @@
            (flags '(no-suid no-dev no-exec))
            (options "mode=0755")
            (create-mount-point? #t))
-	 (file-system
-           (device "none")
-	   (mount-point "/sys/fs/cgroup")
-	   (type "cgroup2")
-	   (check? #f)
-	   (create-mount-point? #f))
          ;; Elogind uses cgroups to organize processes, allowing it to map PIDs
          ;; to sessions.  Elogind's cgroup hierarchy isn't associated with any
          ;; resource controller ("subsystem").
@@ -55,55 +55,9 @@
            (type "cgroup")
            (check? #f)
            (options "none,name=elogind")
-           (create-mount-point? #t))))
-
-(define elogind-service-v2-type
-    (service-type (name 'elogind2)
-                (extensions
-                 (list (service-extension dbus-root-service-type
-                                          elogind-dbus-service)
-                       (service-extension udev-service-type
-                                          (compose list elogind-package))
-                       (service-extension polkit-service-type
-                                          (compose list elogind-package))
-
-                       ;; Start elogind from the Shepherd rather than waiting
-                       ;; for bus activation.  This ensures that it can handle
-                       ;; events like lid close, etc.
-                       (service-extension shepherd-root-service-type
-                                          elogind-shepherd-service)
-
-                       ;; Provide the 'loginctl' command.
-                       (service-extension profile-service-type
-                                          (compose list elogind-package))
-
-                       ;; Extend PAM with pam_elogind.so.
-                       (service-extension pam-root-service-type
-                                          pam-extension-procedure)
-
-                       ;; We need /run/user, /run/systemd, etc.
-                       (service-extension file-system-service-type
-                                          (const %elogind-file-systems-v2))))
-                (default-value (elogind-configuration))
-                (description "Run the @command{elogind} login and seat
-management service.  The @command{elogind} service integrates with PAM to
-allow other system components to know the set of logged-in users as well as
-their session types (graphical, console, remote, etc.).  It can also clean up
-after users when they log out.")))
-
-
-(use-modules (gnu)
-	     (gnu services shepherd)
-	     (gnu services dbus)
-	     (gnu services security-token)
-	     (services tailscale)
-	     (packages tailscale)
-	     (gnu system file-systems)
-	     (srfi srfi-1)
-	     (nongnu packages linux))
-
-
-(use-service-modules cups desktop networking ssh xorg)
+           (create-mount-point? #t)
+           (dependencies (list (car %control-groups)))))
+   %control-groups))
 
 (operating-system
   (locale "en_AU.utf8")
@@ -128,7 +82,6 @@ after users when they log out.")))
   ;; for packages and 'guix install PACKAGE' to install a package.
   (packages (append (specifications->packages (list "tailscale"
 						    "bluez"
-						    "nfs-utils"
 						    "nss-certs"))
                     %base-packages))
 
@@ -167,7 +120,7 @@ after users when they log out.")))
  )
 "))
                   %default-authorized-guix-keys))))
-             (elogind-service-v2-type
+             (elogind-service-type
                config =>
                  (elogind-configuration
 		   (inherit config)
@@ -195,4 +148,4 @@ after users when they log out.")))
                          (mount-point "/")
                          (device "/dev/mapper/cryptroot")
                          (type "ext4")
-                         (dependencies mapped-devices))  %base-file-systems)))
+                         (dependencies mapped-devices)) %base-file-systems)))

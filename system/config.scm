@@ -7,15 +7,13 @@
 ;; changes.
 ;; Indicate which modules to import to access the variables
 ;; used in this configuration.
-
-
-;; import unexported variables so we can build out the new elogind service
+(set! (@ (gnu system file-systems) %control-groups) '())
+(set! (@ (gnu system file-systems) %elogind-file-systems) '())
 (define elogind-dbus-service (@@ (gnu services desktop) elogind-dbus-service))
 (define elogind-package (@@ (gnu services desktop) elogind-package))
 (define elogind-shepherd-service (@@ (gnu services desktop) elogind-shepherd-service))
 (define pam-extension-procedure (@@ (gnu services desktop) pam-extension-procedure))
 
-;; required for defining the new elogind service
 (use-modules (gnu services desktop)
 	     (gnu services dbus)
 	     (gnu services base)
@@ -24,7 +22,8 @@
 	     (gnu system file-systems))
 
 (define %elogind-file-systems-v2
-  ;; Uses the cgroup2 mount instead of cgroup1
+  ;; We don't use systemd, but these file systems are needed for elogind,
+  ;; which was extracted from systemd.
    (list (file-system
            (device "none")
            (mount-point "/run/systemd")
@@ -47,6 +46,9 @@
 	   (type "cgroup2")
 	   (check? #f)
 	   (create-mount-point? #f))
+         ;; Elogind uses cgroups to organize processes, allowing it to map PIDs
+         ;; to sessions.  Elogind's cgroup hierarchy isn't associated with any
+         ;; resource controller ("subsystem").
          (file-system
            (device "cgroup")
            (mount-point "/sys/fs/cgroup/elogind")
@@ -56,8 +58,7 @@
            (create-mount-point? #t))))
 
 (define elogind-service-v2-type
-  ;; elogind with cgroup2 mounts
-    (service-type (name 'elogind)
+    (service-type (name 'elogind2)
                 (extensions
                  (list (service-extension dbus-root-service-type
                                           elogind-dbus-service)
@@ -127,6 +128,7 @@ after users when they log out.")))
   ;; for packages and 'guix install PACKAGE' to install a package.
   (packages (append (specifications->packages (list "tailscale"
 						    "bluez"
+						    "nfs-utils"
 						    "nss-certs"))
                     %base-packages))
 
@@ -134,7 +136,6 @@ after users when they log out.")))
   ;; services, run 'guix system search KEYWORD' in a terminal.
   (services
    (append (list (service xfce-desktop-service-type)
-		 (service elogind-service-v2-type)
                  ;; To configure OpenSSH, pass an 'openssh-configuration'
                  ;; record as a second argument to 'service' below.
 		 (bluetooth-service #:auto-enable? #t)
@@ -151,7 +152,6 @@ after users when they log out.")))
            ;; This is the default list of services we
            ;; are appending to.
            (modify-services %desktop-services
-	     (delete elogind-service-type)
              (guix-service-type config => (guix-configuration
                (inherit config)
                (substitute-urls

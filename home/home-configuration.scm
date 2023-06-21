@@ -33,8 +33,8 @@
 (home-environment
   ;; Below is the list of packages that will show up in your
   ;; Home profile, under ~/.guix-home/profile.
-  (packages (specifications->packages (list "ripgrep"
-                                            "neovim"
+  (packages (specifications->packages (list "neovim"
+                                            "emacs"
                                             "emacs-evil"
 					    "emacs-company"
 					    "emacs-geiser"
@@ -56,12 +56,15 @@
 					    "emacs-slime"
 					    "emacs-spacemacs-theme"
 					    "emacs-slime-company"
+					    "kubectl"
+					    "flux"
+					    "stern"
 					    "font-inconsolata"
 					    "guile"
 					    "gdb"
-                                            "emacs"
                                             "keepassxc"
 					    "syncthing"
+					    "ripgrep"
 					    "curl"
 					    "rsync"
 					    "unzip"
@@ -86,11 +89,14 @@
 		      ("git/config" ,(local-file "./files/gitconfig"))))
      (service home-bash-service-type
                   (home-bash-configuration
-                   (aliases '(("grep" . "grep --color=auto") ("ll" . "ls -l")
+                   (aliases '(("grep" . "grep --color=auto")
+			      ("ll" . "ls -l")
 			      ("vim" . "nvim")
 			      ("gst" . "git status")
 			      ("glog" . "git log")
 			      ("gco" . "git checkout")
+			      ("k" . "kubectl")
+			      ("kgp" . "kubectl get pods")
                               ("ls" . "ls -p --color=auto")))
 		   (environment-variables '(("KUBECONFIG" . "/home/sam/.config/kube")
 					    ("JAVA_HOME" . "`guix build openjdk@17 | awk '/-jdk$/'`")

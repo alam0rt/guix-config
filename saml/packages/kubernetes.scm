@@ -1,5 +1,5 @@
 ; stolen from https://codeberg.org/allana/guix-system/src/branch/main/allana/packages/kubernetes.scm
-(define-module (packages kubernetes)
+(define-module (saml packages kubernetes)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages compression)

@@ -5,6 +5,7 @@
 ;; this file to tweak the system configuration, and pass it
 ;; to the 'guix system reconfigure' command to effect your
 ;; changes.
+(define-module (saml system config))
 
 
 ;; Indicate which modules to import to access the variables
@@ -12,52 +13,10 @@
 (use-modules (gnu)
 	     (gnu services shepherd)
 	     (gnu services security-token)
-	     (services tailscale)
-	     (packages tailscale)
+	     (saml services tailscale)
+	     (saml packages tailscale)
 	     (nongnu packages linux))
 (use-service-modules cups desktop networking ssh xorg)
-
-(define %control-groups
-  ; use cgroups v2
-  (list (file-system
-	  (device "none")
-	  (mount-point "/sys/fs/cgroup")
-	  (type "cgroup2")
-	  (check? #f)
-	  (create-mount-point? #t))))
-
-(define %elogind-file-systems
-  ;; We don't use systemd, but these file systems are needed for elogind,
-  ;; which was extracted from systemd.
-  (append
-   (list (file-system
-           (device "none")
-           (mount-point "/run/systemd")
-           (type "tmpfs")
-           (check? #f)
-           (flags '(no-suid no-dev no-exec))
-           (options "mode=0755")
-           (create-mount-point? #t))
-         (file-system
-           (device "none")
-           (mount-point "/run/user")
-           (type "tmpfs")
-           (check? #f)
-           (flags '(no-suid no-dev no-exec))
-           (options "mode=0755")
-           (create-mount-point? #t))
-         ;; Elogind uses cgroups to organize processes, allowing it to map PIDs
-         ;; to sessions.  Elogind's cgroup hierarchy isn't associated with any
-         ;; resource controller ("subsystem").
-         (file-system
-           (device "cgroup")
-           (mount-point "/sys/fs/cgroup/elogind")
-           (type "cgroup")
-           (check? #f)
-           (options "none,name=elogind")
-           (create-mount-point? #t)
-           (dependencies (list (car %control-groups)))))
-   %control-groups))
 
 (operating-system
   (locale "en_AU.utf8")
@@ -91,7 +50,7 @@
    (append (list (service xfce-desktop-service-type)
                  ;; To configure OpenSSH, pass an 'openssh-configuration'
                  ;; record as a second argument to 'service' below.
-		 (bluetooth-service #:auto-enable? #t)
+		 (service bluetooth-service-type) ;; TODO: auto enable
 		 (simple-service 'etc-subuid etc-service-type
 				 (list `("subuid" ,(plain-file "subuid" "root:0:65536\nsam:100000:65536\n"))))
 		 (simple-service 'etc-subgid etc-service-type

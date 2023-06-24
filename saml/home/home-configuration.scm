@@ -4,6 +4,8 @@
 ;; need to capture the channels being used, as returned by "guix describe".
 ;; See the "Replicating Guix" section in the manual.
 
+(define-module (saml home home-configuration))
+
 (use-modules (gnu home)
              (gnu packages)
              (gnu services)

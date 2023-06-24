@@ -1,11 +1,11 @@
-(define-module (services tailscale)
+(define-module (saml services tailscale)
+	       #:use-module (saml packages tailscale)
 	       #:use-module (gnu services)
 	       #:use-module (gnu services shepherd)
 	       #:use-module (gnu services configuration)
 	       #:use-module (guix records)
 	       #:use-module (guix gexp)
 	       #:use-module (ice-9 match)
-	       #:use-module (packages tailscale)
 	       #:use-module (gnu packages linux)
 	       #:export (tailscaled-service-type tailscaled-configuration))
 

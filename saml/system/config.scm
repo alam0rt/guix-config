@@ -41,6 +41,8 @@
   ;; for packages and 'guix install PACKAGE' to install a package.
   (packages (append (specifications->packages (list "tailscale"
 						    "bluez"
+						    "gcc-toolchain:static" ;; for compiling rust applications
+						    "pkg-config"
 						    "nss-certs"))
                     %base-packages))
 

@@ -9,14 +9,51 @@
   #:use-module (gnu packages perl)
   #:use-module (gnu packages python)
   #:use-module (gnu packages ruby)
+  #:use-module (gnu packages elf)
   #:use-module (gnu packages version-control)
   #:use-module (guix packages)
   #:use-module (guix git-download)
   #:use-module (guix download)
   #:use-module (guix build-system copy)
   #:use-module (guix build-system go)
+  #:use-module (guix build-system gnu)
+  #:use-module (rnrs lists)
   #:use-module ((guix licenses)
                 #:prefix license:))
+
+(define-public containerd
+  (package
+    (name "containerd")
+    (version "1.7.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/containerd/containerd/releases/download/v" version "/containerd-" version "-linux-amd64.tar.gz"))
+       (sha256 (base32 "19r21qwcj4z8d0lghyzbam9mzq9hslnrqm5l21jqah5ba80wfm97"))))
+    (build-system copy-build-system)
+    (native-inputs
+    `(("patchelf" ,patchelf)
+      ("glibc" ,glibc)))
+    (arguments
+	`(#:substitutable? #f
+	  #:phases (modify-phases %standard-phases
+			(add-after 'unpack 'chmod
+				(lambda* (#:key #:allow-other-keys)
+					 (let* ((patchelf (assoc-ref %build-inputs "patchelf"))
+						(patchelf (string-append patchelf "/bin/patchelf"))
+						(containerd "containerd")
+						(glibc (assoc-ref %build-inputs "glibc")))
+					    (chmod "containerd" #o755)
+					    (invoke patchelf "--set-interpreter"
+						(string-append glibc "/lib/ld-linux-x86-64.so.2")
+						    containerd)))))
+          #:install-plan '(("containerd" "/bin/"))))
+    (home-page "")
+    (synopsis "")
+    (description
+     "")
+    (license license:asl2.0)))
+
 
 (define-public kops
   (package

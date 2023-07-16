@@ -57,6 +57,8 @@
 				 (list `("subuid" ,(plain-file "subuid" "root:0:65536\nsam:100000:65536\n"))))
 		 (simple-service 'etc-subgid etc-service-type
 				 (list `("subgid" ,(plain-file "subgid" "root:0:65536\nsam:100000:65536\n"))))
+		 (simple-service 'etc-container-policy etc-service-type
+				 (list `("containers/policy.json", (plain-file "policy.json" "{\"default\": [{\"type\": \"insecureAcceptAnything\"}]}"))))
 		 ;; Support communicating with YubiKey as a SmartCard device.
 		 (service pcscd-service-type)
                  (service openssh-service-type)

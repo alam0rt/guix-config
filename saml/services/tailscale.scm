@@ -42,7 +42,7 @@
       (list
 	(shepherd-service
          (provision '(tailscaled))
-	 (requirement '(networking)) ;; services this depends on
+	 (requirement '(networking NetworkManager)) ;; services this depends on
          (start #~(make-forkexec-constructor
 		    (list #$(file-append tailscale "/usr/bin/tailscaled")
  		     "-state" #$state-file

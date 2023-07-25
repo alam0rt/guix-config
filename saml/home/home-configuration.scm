@@ -70,6 +70,7 @@
 					    "kubectl"
 					    "flux"
 					    "stern"
+					    "gawk"
 					    "font-inconsolata"
 					    "guile"
 					    "gdb"

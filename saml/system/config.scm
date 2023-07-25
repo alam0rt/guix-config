@@ -24,7 +24,7 @@
   (keyboard-layout (keyboard-layout "us"))
   (host-name "sanic")
   (kernel linux)
-  (kernel-arguments (cons "cgroup_no_v1=true" (cons "systemd.unified_cgroup_hierarchy=1" %default-kernel-arguments))) ; enable cgroups v2
+;  (kernel-arguments (cons "cgroup_no_v1=true" (cons "systemd.unified_cgroup_hierarchy=1" %default-kernel-arguments))) ; enable cgroups v2
   (firmware (list linux-firmware))
 
   ;; The list of user accounts ('root' is implicit).

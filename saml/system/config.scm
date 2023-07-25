@@ -24,7 +24,7 @@
   (keyboard-layout (keyboard-layout "us"))
   (host-name "sanic")
   (kernel linux)
-  (kernel-arguments (cons "systemd.unified_cgroup_hierarchy=1" %default-kernel-arguments)) ; enable cgroups v2
+  (kernel-arguments (cons "cgroup_no_v1=true" (cons "systemd.unified_cgroup_hierarchy=1" %default-kernel-arguments))) ; enable cgroups v2
   (firmware (list linux-firmware))
 
   ;; The list of user accounts ('root' is implicit).
@@ -59,6 +59,25 @@
 				 (list `("subgid" ,(plain-file "subgid" "root:0:65536\nsam:100000:65536\n"))))
 		 (simple-service 'etc-container-policy etc-service-type
 				 (list `("containers/policy.json", (plain-file "policy.json" "{\"default\": [{\"type\": \"insecureAcceptAnything\"}]}"))))
+		 (simple-service 'etc-cgconfig-conf etc-service-type
+				 (list `("cgconfig.conf", (plain-file "cgconfig.conf" "group kind {
+    perm {
+        admin {
+            uid = sam;
+        }
+        task {
+            uid = sam;
+        }
+    }
+
+    cpuset {
+        cpuset.mems=\"0\";
+        cpuset.cpus=\"0-5\";
+    }
+    memory {
+        memory.limit_in_bytes = 5000000000;
+    }
+}"))))
 		 ;; Support communicating with YubiKey as a SmartCard device.
 		 (service pcscd-service-type)
                  (service openssh-service-type)

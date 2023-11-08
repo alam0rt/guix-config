@@ -56,15 +56,17 @@
 					    "emacs-markdown-mode"
 					    "emacs-projectile"
 					    "emacs-slime"
+					    "emacs-straight-el"
+					    "emacs-use-package"
 					    "emacs-spacemacs-theme"
 					    "emacs-emacsql"
-					    "emacs-emacsql-sqlite3"
 					    "emacs-slime-company"
 					    "emacs-rustic"
 					    "emacs-org-roam"
 					    "emacs-org-roam-ui"
-					    "emacs-use-package"
 					    "emacs-direnv"
+					    "node" ;; for copilot.el
+					    "calibre"
 					    "direnv"
 					    "rust"
 					    "kubectl"
@@ -79,6 +81,8 @@
 					    "ripgrep"
 					    "curl"
 					    "rsync"
+					    "tor"
+					    "proxychains-ng"
 					    "unzip"
                                             "firefox"
                                             "irssi")))
@@ -98,6 +102,19 @@
 		    `(("tmux/tmux.conf" ,(local-file "./files/tmux.conf"))
 		      ("containers/registries.conf" ,(local-file "./files/containers/registries.conf"))
 		      ("containers/policy.json" ,(local-file "./files/containers/policy.json"))
+		      ("proxychains/proxychains.conf" ,(plain-file "proxychains.conf" "
+# proxychains.conf  VER 4
+#
+#        HTTP, SOCKS4, SOCKS5 tunneling proxifier with DNS.
+#	
+strict_chain
+proxy_dns
+tcp_read_time_out 15000
+tcp_connect_time_out 8000
+
+[ProxyList]
+socks4 	127.0.0.1 9050 # tor
+"))
 		      ("git/config" ,(local-file "./files/gitconfig"))))
      (service home-bash-service-type
                   (home-bash-configuration
@@ -112,6 +129,7 @@
                               ("ls" . "ls -p --color=auto")))
 		   (environment-variables '(("KUBECONFIG" . "/home/sam/.config/kube")
 					    ("JAVA_HOME" . "`guix build openjdk@17 | awk '/-jdk$/'`")
+					    ("PROXYCHAINS_CONF_FILE" . "/home/sam/.config/proxychains/proxychains.conf")
                                             ("EDITOR" . "nvim")))
                    (bashrc
 		    (list (local-file "./files/bashrc" "bashrc")))

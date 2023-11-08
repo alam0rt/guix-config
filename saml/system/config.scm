@@ -33,7 +33,7 @@
                   (comment "Sam Lockart")
                   (group "users")
                   (home-directory "/home/sam")
-                  (supplementary-groups '("wheel" "netdev" "audio" "video" "cdrom" "lp")))
+                  (supplementary-groups '("wheel" "netdev" "audio" "video" "cdrom" "lp" "dialout")))
                 %base-user-accounts))
 
   ;; Packages installed system-wide.  Users can also install packages

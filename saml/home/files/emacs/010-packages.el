@@ -10,6 +10,11 @@
 
 (setq inferior-lisp-program "guile")
 
+
+(straight-use-package
+  '(el-patch :type git :host github :repo "zerolfx/copilot.el" :files ("dist" "*.el")))
+(add-hook 'prog-mode-hook 'copilot-mode)
+
 ;; HOOKZ
 (add-hook 'scheme-mode-hook
 	  (lambda () geiser))

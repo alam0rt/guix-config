@@ -9,11 +9,6 @@
 
 (add-to-list 'default-frame-alist '(font . "Inconsolata"))
 
-;; set default shell
-(defadvice ansi-term (before force-bash)
-  (interactive (list set-term-shell)))
-(ad-activate `ansi-term)
-
 ;; prefer y/n
 (defalias `yes-or-no-p `y-or-n-p)
 

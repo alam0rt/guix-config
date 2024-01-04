@@ -8,12 +8,20 @@
 (evil-mode 1)
 (evil-select-search-module 'evil-search-module 'evil-search)
 
+;; enable rg bindings for emacs
+(rg-enable-default-bindings)
+
 (setq inferior-lisp-program "guile")
 
-
-(straight-use-package
-  '(el-patch :type git :host github :repo "zerolfx/copilot.el" :files ("dist" "*.el")))
-(add-hook 'prog-mode-hook 'copilot-mode)
+(use-package copilot
+  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+  :hook ((prog-mode . copilot-mode))
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word))
+  :ensure t)
 
 ;; HOOKZ
 (add-hook 'scheme-mode-hook
@@ -22,4 +30,7 @@
 (add-hook 'go-mode-hook 'lsp-deferred)
 (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
 (add-hook 'after-init-hook 
-          (lambda () (load-theme 'spacemacs-light t)))
+          (lambda () (load-theme 'doom-sourcerer t)))
+
+
+;; a lambda which executes the command `guix pull` and prints the output

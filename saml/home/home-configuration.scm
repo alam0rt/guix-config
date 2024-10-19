@@ -50,7 +50,6 @@
 					    "emacs-highlight-indent-guides"
 					    "emacs-lsp-mode"
 					    "emacs-exec-path-from-shell"
-					    "emacs-elpy"
 					    "emacs-company-lsp"
 					    "emacs-company-quickhelp"
 					    "emacs-go-mode"

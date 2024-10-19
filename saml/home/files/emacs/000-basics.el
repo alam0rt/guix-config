@@ -19,10 +19,13 @@
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 (savehist-mode 1)
-(setq savehist-file "~/.emacs_history")
+(setq savehist-file (concat (getenv "HOME") "/.emacs_history"))
 
 ;; Tramp
 (require 'tramp)
 (add-to-list 'tramp-remote-path "/run/current-system/profile/bin")
 (add-to-list 'tramp-remote-path "/run/current-system/profile/sbin")
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+;; change lsp cache from r/o config dir
+(setq lsp-session-file (concat (getenv "XDG_CACHE_HOME") "/lsp-session-v1"))

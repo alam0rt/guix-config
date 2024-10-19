@@ -23,6 +23,9 @@
               ("C-<tab>" . 'copilot-accept-completion-by-word))
   :ensure t)
 
+;; change lsp cache from r/o config dir
+(setq lsp-session-file (concat (getenv "XDG_CACHE_HOME") "/.lsp-session-v1"))
+
 ;; HOOKZ
 (add-hook 'scheme-mode-hook
 	  (lambda () geiser))

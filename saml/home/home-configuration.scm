@@ -15,7 +15,9 @@
 	     (ice-9 rdelim)
 	     (gnu home services)
 	     (gnu home services shepherd)
+	     (gnu home services sway)
 	     (gnu packages syncthing)
+	     (gnu packages terminals)
              (gnu home services shells))
 
 (define %logdir
@@ -88,7 +90,10 @@
 					    "proxychains-ng"
 					    "unzip"
                                             "firefox"
-                                            "irssi")))
+                                            "irssi"
+					    ;; wm
+					    "kitty"
+					    "sway")))
 
   ;; Below is the list of Home services.  To search for available
   ;; services, run 'guix home search KEYWORD' in a terminal.
@@ -97,6 +102,10 @@
      (service home-shepherd-service-type
 	      (home-shepherd-configuration
 		(services (list %syncthing-user-service))))
+     (service home-sway-service-type
+	       (sway-configuration
+		(variables
+		  '((term . ,(file-append kitty "/bin/kitty"))))))
      (simple-service 'emacs-configuration
 		    home-xdg-configuration-files-service-type
 		      `(("emacs", (local-file "./files/emacs" #:recursive? #t))))
@@ -138,4 +147,3 @@ socks4 	127.0.0.1 9050 # tor
 		    (list (local-file "./files/bashrc" "bashrc")))
                    (bash-profile
 		    (list (local-file "./files/bash_profile" "bash_profile"))))))))
-
